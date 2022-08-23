@@ -1,0 +1,174 @@
+image: krsua-service.repo.corp.tander.ru/service/ansible/krasnosvar-dalpinsible:latest
+variables:
+  PRORDIR: "/builds/kb_deploy/co_deploy/co_data_base"
+  db_image: "krsua-service.repo.corp.tander.ru/service/dbinstall:master"
+stages:
+  - status
+  - install
+  - uninstall
+  - web
+  - delivery_exe
+
+price_status:
+  image: $db_image
+  stage: status
+  script:
+    - /bin/python3.9 $PRORDIR/main.py db status
+    #- /bin/zip -r logs.zip result
+  when: manual 
+
+price_install:
+  image: $db_image
+  stage: install
+  variables:
+    install_action: "install"
+    NLS_LANG: "RUSSIAN_RUSSIA.CL8MSWIN1251"
+    LANG: "ru_RU.CP1251"
+    install_db_address: "(DESCRIPTION = (ADDRESS = (PROTOCOL = TCP)(HOST = <HIDDEN>)(PORT = 1521))(CONNECT_DATA = (SERVER = DEDICATED)(SERVICE_NAME = $install_db_name )))"
+    install_db_name: "<HIDDEN>"
+    install_db_user: "install"
+    install_db_password: "$INSTALL_PASS"
+    install_release_path: "$PRORDIR/build"
+    install_output_path: "$PRORDIR/result"
+  script:
+    - /bin/python3.9 $PRORDIR/main.py db load
+    - chmod -R 777 /instantclient_21_5
+    - /bin/python3.9 /executer/main.py
+    - /bin/zip -r logs.zip result
+  artifacts:
+    paths:
+      - logs.zip
+    expire_in: 1 day
+  when: manual
+
+price_uninstall:
+  image: $db_image
+  stage: uninstall
+  variables:
+    install_action: "uninstall"
+    NLS_LANG: "RUSSIAN_RUSSIA.CL8MSWIN1251"
+    LANG: "ru_RU.CP1251"
+    install_db_address: "(DESCRIPTION = (ADDRESS = (PROTOCOL = TCP)(HOST = <HIDDEN>)(PORT = 1521))(CONNECT_DATA = (SERVER = DEDICATED)(SERVICE_NAME = $install_db_name )))"
+    install_db_name: "<HIDDEN>"
+    install_db_user: "install"
+    install_db_password: "$INSTALL_PASS"
+    install_release_path: "$PRORDIR/build"
+    install_output_path: "$PRORDIR/result"
+  script:
+    - /bin/python3.9 $PRORDIR/main.py db load
+    - chmod -R 777 /instantclient_21_5
+    - /bin/python3.9 /executer/main.py
+    - /bin/zip -r logs.zip result
+  artifacts:
+    paths:
+      - logs.zip
+    expire_in: 1 day
+  when: manual
+
+orm_status:
+  image: $db_image
+  stage: status
+  script:
+    - /bin/python3.9 $PRORDIR/main.py orm_db status
+    #- /bin/zip -r logs.zip result
+  when: manual
+
+orm_install:
+  image: $db_image
+  stage: install
+  variables:
+    install_action: "install"
+    NLS_LANG: "RUSSIAN_RUSSIA.CL8MSWIN1251"
+    LANG: "ru_RU.CP1251"
+    install_db_address: "(DESCRIPTION = (ADDRESS = (PROTOCOL = TCP)(HOST = <HIDDEN>)(PORT = 1521))(CONNECT_DATA = (SERVER = DEDICATED)(SERVICE_NAME = $install_db_name )))"
+    install_db_name: "<HIDDEN>"
+    install_db_user: "install"
+    install_db_password: "$INSTALL_PASS"
+    install_release_path: "$PRORDIR/build"
+    install_output_path: "$PRORDIR/result"
+  script:
+    - /bin/python3.9 $PRORDIR/main.py orm_db load
+    - chmod -R 777 /instantclient_21_5
+    - /bin/python3.9 /executer/main.py
+    - /bin/zip -r logs.zip result
+  artifacts:
+    paths:
+      - logs.zip
+    expire_in: 1 day
+  when: manual
+
+orm_uninstall:
+  image: $db_image
+  stage: uninstall
+  variables:
+    install_action: "uninstall"
+    NLS_LANG: "RUSSIAN_RUSSIA.CL8MSWIN1251"
+    LANG: "ru_RU.CP1251"
+    install_db_address: "(DESCRIPTION = (ADDRESS = (PROTOCOL = TCP)(HOST = <HIDDEN>)(PORT = 1521))(CONNECT_DATA = (SERVER = DEDICATED)(SERVICE_NAME = $install_db_name )))"
+    install_db_name: "<HIDDEN>"
+    install_db_user: "install"
+    install_db_password: "$INSTALL_PASS"
+    install_release_path: "$PRORDIR/build"
+    install_output_path: "$PRORDIR/result"
+  script:
+    - /bin/python3.9 $PRORDIR/main.py orm_db load
+    - chmod -R 777 /instantclient_21_5
+    - /bin/python3.9 /executer/main.py
+    - /bin/zip -r logs.zip result
+  artifacts:
+    paths:
+      - logs.zip
+    expire_in: 1 day
+  when: manual
+
+stop_web_price:
+  stage: web
+  script:
+    - ansible-playbook $PRORDIR/ansible/playbooks/main.yml -i $PRORDIR/hosts -l price -e "ansible_user=svc_kbinfra ansible_password=$KBINFRA_PASS ansible_become_password=$KBINFRA_PASS" -t stop
+  when: manual
+
+start_web_price:
+  stage: web
+  script:
+    - ansible-playbook $PRORDIR/ansible/playbooks/main.yml -i $PRORDIR/hosts -l price -e "ansible_user=svc_kbinfra ansible_password=$KBINFRA_PASS ansible_become_password=$KBINFRA_PASS" -t start
+  when: manual
+
+stop_web_orm:
+  stage: web
+  script:
+    - ansible-playbook $PRORDIR/ansible/playbooks/main.yml -i $PRORDIR/hosts -l orm -e "ansible_user=kbinfra_local ansible_password=$KBINFRA_PASS ansible_become_password=$KBINFRA_PASS" -t stop
+  when: manual
+
+start_web_orm:
+  stage: web
+  script:
+    - ansible-playbook $PRORDIR/ansible/playbooks/main.yml -i $PRORDIR/hosts -l orm -e "ansible_user=svc_kbinfra_local ansible_password=$KBINFRA_PASS ansible_become_password=$KBINFRA_PASS" -t start
+  when: manual
+
+exe_update:
+  image: $db_image
+  stage: delivery_exe
+  script:
+    - /bin/python3.9 $PRORDIR/exedelivery.py update
+  when: manual
+
+exe_prelatest_release:
+  image: $db_image
+  stage: delivery_exe
+  script:
+    - /bin/python3.9 $PRORDIR/exedelivery.py down_release
+  when: manual
+
+exe_prelatest_build:
+  image: $db_image
+  stage: delivery_exe
+  script:
+    - /bin/python3.9 $PRORDIR/exedelivery.py down_build
+  when: manual
+
+exe_status:
+  image: $db_image
+  stage: delivery_exe
+  script:
+    - /bin/python3.9 $PRORDIR/exedelivery.py status
+  when: manual

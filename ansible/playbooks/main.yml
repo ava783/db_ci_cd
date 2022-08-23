@@ -1,0 +1,21 @@
+---
+- name: All in One
+  hosts: all
+  tasks:
+    - name: stop web service
+      systemd:
+        name: tomcat.service
+        state: stopped
+      tags: stop
+      register: tomcat
+    
+    - name: start web service
+      systemd:
+        name: tomcat
+        state: started
+      tags: start
+      register: tomcat
+
+    
+    - debug: var=tomcat.stdout_lines
+    - debug: var=tomcat.stderr_lines
