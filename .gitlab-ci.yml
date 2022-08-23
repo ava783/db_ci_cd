@@ -1,7 +1,7 @@
 image: <HIDDEN>
 variables:
   PRORDIR: "/builds/kb_deploy/co_deploy/co_data_base"
-  db_image: "krsua-service.<HIDDEN?.ru/service/dbinstall:master"
+  db_image: "krsua-service.<HIDDEN>.ru/service/dbinstall:master"
 stages:
   - status
   - install
